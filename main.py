@@ -1,13 +1,15 @@
 """
-JAHIDER NUR v1 - Mobile App (Kivy) - Android APK er jonno
+JAHIDER NUR v2 - Mobile App (Kivy) - Android APK
+Design v2 (Jahid er bola moto): Feature gulo UPORE choto pill, majher board BORO,
+nicher line CHIKON/choto, Login page BORO kore upore, rongin color design.
 Features: Identity/Login, Offline Mesh Map, Devices (500m + Relay), Chat, Voice, Call, News
-Local Storage: jahider_nur_data.json (phone er nijer storage e)
-APK banate: buildozer.spec diye - README_APK_BANGLA.md dekhun
+Local Storage: jahider_nur_data.json
 """
-import json, os, hashlib, uuid, math, random
+import json, os, hashlib, uuid, math
 from collections import deque
 
 from kivy.app import App
+from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
@@ -18,8 +20,16 @@ from kivy.uix.widget import Widget
 from kivy.graphics import Color, Ellipse, Line
 from kivy.clock import Clock
 
+Window.clearcolor = (0.05, 0.09, 0.14, 1)
+
 RANGE_M = 500
 DATA_FILE = "jahider_nur_data.json"
+
+GOLD = (1, 0.76, 0.05, 1)
+TEAL = (0.18, 0.89, 0.77, 1)
+DARKBTN = (0.14, 0.17, 0.24, 1)
+FEAT_COLORS = {"map": (0.35, 0.75, 1, 1), "devices": (0.6, 0.47, 1, 1), "chat": GOLD,
+               "news": (1, 0.42, 0.62, 1), "more": TEAL}
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -53,31 +63,46 @@ def find_route(me, target, peers):
 DB = load_data()
 CURRENT = {"user": None}
 
-def header(title):
-    return Label(text=f"[b]{title}[/b]", markup=True, size_hint_y=None, height=56, font_size=22, color=(1,0.72,0.1,1))
-
-def nav_bar(go):
-    bar = BoxLayout(size_hint_y=None, height=52, spacing=4)
+def title_bar(title, active):
+    """Uporer choto title line + feature pill gulo uporer konare"""
+    outer = BoxLayout(orientation="vertical", size_hint_y=None, height=86, spacing=4)
+    me = CURRENT["user"]
+    who = f"  • {me['username']}" if me else ""
+    outer.add_widget(Label(text=f"[b]Jahider Nur[/b]  -  {title}{who}", markup=True,
+                           size_hint_y=None, height=34, font_size=17, color=GOLD, halign="left"))
+    bar = BoxLayout(size_hint_y=None, height=40, spacing=5)
     for txt, scr in [("Map","map"),("Devices","devices"),("Chat","chat"),("News","news"),("More","more")]:
-        b = Button(text=txt, font_size=13); b.bind(on_press=lambda x, s=scr: go(s)); bar.add_widget(b)
-    return bar
+        if scr == active:
+            b = Button(text=txt, font_size=13, bold=True, background_color=FEAT_COLORS[scr], color=(0.08,0.08,0.1,1))
+        else:
+            b = Button(text=txt, font_size=13, background_color=DARKBTN, color=(0.92,0.93,0.97,1))
+        b.bind(on_press=lambda x, s=scr: _go(s))
+        bar.add_widget(b)
+    outer.add_widget(bar)
+    return outer
+
+_MANAGER = {"sm": None}
+def _go(scr):
+    if _MANAGER["sm"]: _MANAGER["sm"].current = scr
 
 class LoginScreen(Screen):
     def __init__(self, **kw):
         super().__init__(**kw)
-        lay = BoxLayout(orientation="vertical", padding=24, spacing=10)
-        lay.add_widget(Label(text="☀", font_size=54, size_hint_y=None, height=70, color=(1,0.72,0.1,1)))
-        lay.add_widget(Label(text="JAHIDER NUR", font_size=30, bold=True, size_hint_y=None, height=44))
-        lay.add_widget(Label(text="Offline Mesh • Net Charai Cholbe", font_size=14, size_hint_y=None, height=26, color=(0.4,0.9,0.8,1)))
-        self.name_i = TextInput(hint_text="Full Name (sudhu Register e)", size_hint_y=None, height=48, multiline=False)
-        self.user_i = TextInput(hint_text="Username (Login ID)", size_hint_y=None, height=48, multiline=False)
-        self.pass_i = TextInput(hint_text="Password", password=True, size_hint_y=None, height=48, multiline=False)
-        self.msg = Label(text="", size_hint_y=None, height=30, color=(1,0.4,0.4,1))
+        lay = BoxLayout(orientation="vertical", padding=26, spacing=12)
+        lay.add_widget(Label(text="JAHIDER NUR", font_size=40, bold=True, size_hint_y=None, height=58, color=GOLD))
+        lay.add_widget(Label(text="Offline Mesh Network - Net Charai Cholbe", font_size=15, size_hint_y=None, height=28, color=TEAL))
+        lay.add_widget(Label(text="LOGIN", font_size=24, bold=True, size_hint_y=None, height=40))
+        self.name_i = TextInput(hint_text="Full Name (sudhu Register e)", size_hint_y=None, height=56, multiline=False, font_size=17)
+        self.user_i = TextInput(hint_text="Username (Login ID)", size_hint_y=None, height=56, multiline=False, font_size=17)
+        self.pass_i = TextInput(hint_text="Password", password=True, size_hint_y=None, height=56, multiline=False, font_size=17)
+        self.msg = Label(text="", size_hint_y=None, height=32, color=(1,0.45,0.45,1), font_size=14)
         lay.add_widget(self.name_i); lay.add_widget(self.user_i); lay.add_widget(self.pass_i); lay.add_widget(self.msg)
-        b1 = Button(text="LOGIN - Enter Network", size_hint_y=None, height=52, background_color=(1,0.62,0.05,1), color=(0,0,0,1), bold=True)
+        b1 = Button(text="LOGIN - Enter Network", size_hint_y=None, height=64, background_color=GOLD, color=(0.08,0.08,0.1,1), bold=True, font_size=19)
         b1.bind(on_press=self.do_login); lay.add_widget(b1)
-        b2 = Button(text="Create New Identity (Register)", size_hint_y=None, height=48)
+        b2 = Button(text="Create New Identity (Register)", size_hint_y=None, height=52, background_color=DARKBTN, font_size=15)
         b2.bind(on_press=self.do_register); lay.add_widget(b2)
+        lay.add_widget(Label(text="Internet charai cholbe - 500m mesh diye", font_size=13, size_hint_y=None, height=26, color=(0.55,0.6,0.7,1)))
+        lay.add_widget(Widget())
         self.add_widget(lay)
     def do_register(self, *a):
         n,u,p = self.name_i.text.strip(), self.user_i.text.strip(), self.pass_i.text.strip()
@@ -111,17 +136,17 @@ class MapScreen(Screen):
     def on_enter(self, *a):
         self.clear_widgets(); me=CURRENT["user"]
         lay=BoxLayout(orientation="vertical", padding=10, spacing=6)
-        lay.add_widget(header("Offline Navigation"))
-        lay.add_widget(Label(text=f"⭐ {me['name']} • {me['device_id']} • Position: {me['x']}m, {me['y']}m", size_hint_y=None, height=26))
+        lay.add_widget(title_bar("Offline Navigation", "map"))
+        lay.add_widget(Label(text=f"{me['name']} - {me['device_id']} - Position: {me['x']}m, {me['y']}m", size_hint_y=None, height=26, color=TEAL))
         self.mapw=MapWidget(size_hint_y=1); lay.add_widget(self.mapw)
         Clock.schedule_once(lambda dt: self.mapw.draw_map(me), 0.2)
         reach=[p for p in DB["peers"] if find_route(me,p,DB["peers"])]
         direct=[p for p in DB["peers"] if dist(me,p)<=RANGE_M]
-        lay.add_widget(Label(text=f"500m Direct: {len(direct)} ti • Relay diye Reachable: {len(reach)} ti • Mot: {len(DB['peers'])} ti", size_hint_y=None, height=28, color=(0.4,0.9,0.8,1)))
-        mv=BoxLayout(size_hint_y=None, height=50, spacing=4)
-        for txt,dx,dy in [("⬆ Up",0,100),("⬇ Down",0,-100),("⬅ Left",-100,0),("➡ Right",100,0)]:
-            b=Button(text=txt); b.bind(on_press=lambda x,dx=dx,dy=dy: self.move(dx,dy)); mv.add_widget(b)
-        lay.add_widget(mv); lay.add_widget(nav_bar(lambda s: setattr(self.manager,"current",s))); self.add_widget(lay)
+        lay.add_widget(Label(text=f"500m Direct: {len(direct)} ti - Relay Reachable: {len(reach)} ti - Mot: {len(DB['peers'])} ti", size_hint_y=None, height=26, color=TEAL, font_size=13))
+        mv=BoxLayout(size_hint_y=None, height=44, spacing=4)
+        for txt,dx,dy in [("Up",0,100),("Down",0,-100),("Left",-100,0),("Right",100,0)]:
+            b=Button(text=txt, background_color=DARKBTN, font_size=13); b.bind(on_press=lambda x,dx=dx,dy=dy: self.move(dx,dy)); mv.add_widget(b)
+        lay.add_widget(mv); self.add_widget(lay)
     def move(self,dx,dy):
         me=CURRENT["user"]; me["x"]+=dx; me["y"]+=dy; self.on_enter()
 
@@ -129,27 +154,33 @@ class DevicesScreen(Screen):
     def on_enter(self, *a):
         self.clear_widgets(); me=CURRENT["user"]
         lay=BoxLayout(orientation="vertical", padding=10, spacing=6)
-        lay.add_widget(header(f"Devices ({len(DB['peers'])} ti)"))
+        lay.add_widget(title_bar(f"Devices ({len(DB['peers'])} ti)", "devices"))
         sv=ScrollView(); box=BoxLayout(orientation="vertical", size_hint_y=None, spacing=4); box.bind(minimum_height=box.setter("height"))
         for p in DB["peers"]:
             d=int(dist(me,p)); r=find_route(me,p,DB["peers"])
             st="Direct" if d<=RANGE_M else (f"Relay {len(r)-1} hop: {' > '.join(r)}" if r else "Out of Mesh")
-            box.add_widget(Label(text=f"{p['name']} • {p['area']} • {d}m • {st}", size_hint_y=None, height=34))
-        sv.add_widget(box); lay.add_widget(sv); lay.add_widget(nav_bar(lambda s: setattr(self.manager,"current",s))); self.add_widget(lay)
+            col = (0.3,0.95,0.5,1) if d<=RANGE_M else (TEAL if r else (1,0.5,0.5,1))
+            box.add_widget(Label(text=f"{p['name']} - {p['area']} - {d}m - {st}", size_hint_y=None, height=36, color=col))
+        sv.add_widget(box); lay.add_widget(sv); self.add_widget(lay)
 
 class ChatScreen(Screen):
     def on_enter(self, *a):
         self.clear_widgets()
         lay=BoxLayout(orientation="vertical", padding=10, spacing=6)
-        lay.add_widget(header("Chat Messaging"))
-        sv=ScrollView(); box=BoxLayout(orientation="vertical", size_hint_y=None, spacing=3); box.bind(minimum_height=box.setter("height"))
+        lay.add_widget(title_bar("Chat Messaging", "chat"))
+        sv=ScrollView(); box=BoxLayout(orientation="vertical", size_hint_y=None, spacing=4); box.bind(minimum_height=box.setter("height"))
+        me = CURRENT["user"]["name"] if CURRENT["user"] else ""
         for m in DB["messages"]:
-            box.add_widget(Label(text=f"{m['from']}: {m['text']}", size_hint_y=None, height=30))
+            own = (m["from"] == me)
+            box.add_widget(Label(text=f"{m['from']}: {m['text']}", size_hint_y=None, height=34,
+                                 color=(0.55,1,0.9,1) if own else (0.65,0.85,1,1),
+                                 halign="right" if own else "left"))
         sv.add_widget(box); lay.add_widget(sv)
-        row=BoxLayout(size_hint_y=None, height=50, spacing=4)
-        self.inp=TextInput(hint_text="Message likhun (offline mesh diye jabe)", multiline=False); row.add_widget(self.inp)
-        b=Button(text="Send", size_hint_x=None, width=80); b.bind(on_press=self.send); row.add_widget(b)
-        lay.add_widget(row); lay.add_widget(nav_bar(lambda s: setattr(self.manager,"current",s))); self.add_widget(lay)
+        # Nicher line: CHIKON/choto slim input row
+        row=BoxLayout(size_hint_y=None, height=44, spacing=5)
+        self.inp=TextInput(hint_text="Message likhun (offline mesh diye jabe)", multiline=False, font_size=14); row.add_widget(self.inp)
+        b=Button(text="Send", size_hint_x=None, width=74, background_color=GOLD, color=(0.08,0.08,0.1,1), bold=True); b.bind(on_press=self.send); row.add_widget(b)
+        lay.add_widget(row); self.add_widget(lay)
     def send(self,*a):
         if self.inp.text.strip():
             DB["messages"].append({"from":CURRENT["user"]["name"],"text":self.inp.text.strip()}); save_data(DB); self.on_enter()
@@ -158,13 +189,15 @@ class NewsScreen(Screen):
     def on_enter(self, *a):
         self.clear_widgets()
         lay=BoxLayout(orientation="vertical", padding=10, spacing=6)
-        lay.add_widget(header("News Portal"))
-        self.inp=TextInput(hint_text="News headline likhe Post korun - shobai post korte parbe", size_hint_y=None, height=48, multiline=False); lay.add_widget(self.inp)
-        b=Button(text="✍ News Post Korun", size_hint_y=None, height=46); b.bind(on_press=self.post); lay.add_widget(b)
+        lay.add_widget(title_bar("News Portal", "news"))
         sv=ScrollView(); box=BoxLayout(orientation="vertical", size_hint_y=None, spacing=4); box.bind(minimum_height=box.setter("height"))
         for n in reversed(DB["news"]):
-            box.add_widget(Label(text=f"📰 {n['title']}  — {n['author']}", size_hint_y=None, height=36))
-        sv.add_widget(box); lay.add_widget(sv); lay.add_widget(nav_bar(lambda s: setattr(self.manager,"current",s))); self.add_widget(lay)
+            box.add_widget(Label(text=f"{n['title']}  - {n['author']}", size_hint_y=None, height=38, color=(1,0.75,0.85,1)))
+        sv.add_widget(box); lay.add_widget(sv)
+        row=BoxLayout(size_hint_y=None, height=44, spacing=5)
+        self.inp=TextInput(hint_text="News headline likhun - shobai post korte parbe", multiline=False, font_size=14); row.add_widget(self.inp)
+        b=Button(text="Post", size_hint_x=None, width=74, background_color=(1,0.42,0.62,1), bold=True); b.bind(on_press=self.post); row.add_widget(b)
+        lay.add_widget(row); self.add_widget(lay)
     def post(self,*a):
         if self.inp.text.strip():
             DB["news"].append({"title":self.inp.text.strip(),"author":CURRENT["user"]["name"]}); save_data(DB); self.on_enter()
@@ -172,27 +205,27 @@ class NewsScreen(Screen):
 class MoreScreen(Screen):
     def on_enter(self, *a):
         self.clear_widgets(); me=CURRENT["user"]
-        lay=BoxLayout(orientation="vertical", padding=14, spacing=8)
-        lay.add_widget(header("Voice • Call • Identity"))
-        lay.add_widget(Label(text=f"👤 {me['name']} • 🆔 {me['device_id']}\n🎤 Voice Notes: {len(DB['voice_notes'])} ti • 📞 Calls: {len(DB['calls'])} ti", size_hint_y=None, height=52))
-        self.status=Label(text="", size_hint_y=None, height=34, color=(0.3,0.95,0.5,1)); lay.add_widget(self.status)
-        bv=Button(text="🎤 Voice Message Pathan (15 sec note)", size_hint_y=None, height=50); bv.bind(on_press=self.voice); lay.add_widget(bv)
-        bc=Button(text="📞 Call Korun (Rahim - Mesh Relay)", size_hint_y=None, height=50); bc.bind(on_press=self.call); lay.add_widget(bc)
-        lay.add_widget(nav_bar(lambda s: setattr(self.manager,"current",s))); self.add_widget(lay)
+        lay=BoxLayout(orientation="vertical", padding=12, spacing=8)
+        lay.add_widget(title_bar("Voice - Call - Identity", "more"))
+        lay.add_widget(Label(text=f"{me['name']} - {me['device_id']}\nVoice Notes: {len(DB['voice_notes'])} ti - Calls: {len(DB['calls'])} ti", size_hint_y=None, height=54, color=TEAL))
+        self.status=Label(text="", size_hint_y=None, height=36, color=(0.3,0.95,0.5,1)); lay.add_widget(self.status)
+        bv=Button(text="Voice Message Pathan (15 sec note)", size_hint_y=None, height=54, background_color=DARKBTN); bv.bind(on_press=self.voice); lay.add_widget(bv)
+        bc=Button(text="Call Korun (Rahim - Mesh Relay)", size_hint_y=None, height=54, background_color=DARKBTN); bc.bind(on_press=self.call); lay.add_widget(bc)
+        lay.add_widget(Widget()); self.add_widget(lay)
         self.sec=0; self.timer=None
     def voice(self,*a):
-        DB["voice_notes"].append({"from":CURRENT["user"]["name"],"duration":15}); save_data(DB); self.status.text="🎤 Voice message pathano hoyeche (Mesh diye)"
+        DB["voice_notes"].append({"from":CURRENT["user"]["name"],"duration":15}); save_data(DB); self.status.text="Voice message pathano hoyeche (Mesh diye)"
     def call(self,*a):
         self.sec=0; DB["calls"].append({"from":CURRENT["user"]["name"],"to":"Rahim"}); save_data(DB)
         if self.timer: self.timer.cancel()
         def tick(dt):
-            self.sec+=1; self.status.text=f"📞 Calling Rahim... {self.sec} sec (Relay Connected) - abar Call chaple timer cholbe, onno page e gele theme jabe"
+            self.sec+=1; self.status.text=f"Calling Rahim... {self.sec} sec (Relay Connected)"
         self.timer=Clock.schedule_interval(tick,1)
 
 class JahiderNurApp(App):
     def build(self):
-        self.title="Jahider Nur v1"
-        sm=ScreenManager()
+        self.title="Jahider Nur v2"
+        sm=ScreenManager(); _MANAGER["sm"]=sm
         for cls,name in [(LoginScreen,"login"),(MapScreen,"map"),(DevicesScreen,"devices"),(ChatScreen,"chat"),(NewsScreen,"news"),(MoreScreen,"more")]:
             sm.add_widget(cls(name=name))
         return sm
