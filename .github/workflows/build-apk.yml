@@ -25,8 +25,11 @@ jobs:
       - name: Build APK
         run: |
           yes | buildozer android debug
+      - name: Rename APK
+        run: |
+          mv bin/*.apk bin/jahider_noor_v1.apk
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Jahider_Nur_v1_APK
-          path: bin/*.apk
+          path: bin/jahider_noor_v1.apk
