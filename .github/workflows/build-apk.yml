@@ -21,7 +21,10 @@ jobs:
         run: |
           unzip -o Jahider_Nur_APK_Project_v1.zip -d app_src
           cd app_src
-          buildozer android debug
+          mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
+          printf "8933bad161af4178b1185d1a37fbf41ea5269c55\n" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          printf "84831b9409646a918e30573bab4c9cdd\n" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
+          yes | buildozer android debug
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
